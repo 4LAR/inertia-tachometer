@@ -1,26 +1,37 @@
 #include <Wire.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-
-const int MPU_addr = 0x68;  // I2C адрес модуля MPU-6050
+#include <MPU6050.h>
 
 const char* ssid = "TEST_GYRO";
 const char* password = "40404040";
 
 ESP8266WebServer server(80);
 
-
+// const int MPU_addr = 0x68;  // I2C адрес модуля MPU-6050
+MPU6050 mpu;
+int SCL_PIN=D1;
+int SDA_PIN=D2;
 
 void setup() {
   Serial.begin(115200);
-  Wire.begin();
+  // Wire.begin();
 
   // Инициализация MPU-6050
-  Wire.beginTransmission(MPU_addr);
-  Wire.write(0x6B);  // PWR_MGMT_1 register
-  Wire.write(0);     // "пробуждаем" модуль MPU-6050
-  Wire.endTransmission(true);
+  // Wire.beginTransmission(MPU_addr);
+  // Wire.write(0x6B);  // PWR_MGMT_1 register
+  // Wire.write(0);     // "пробуждаем" модуль MPU-6050
+  // Wire.endTransmission(true);
+  Serial.println("Initialize MPU6050");
+  while(!mpu.beginSoftwareI2C(SCL_PIN,SDA_PIN,MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G))
+  {
+    Serial.println("Could not find a valid MPU6050 sensor, check wiring!");
+    delay(500);
+  }
   Serial.println("Wrote to IMU");
+  mpu.calibrateGyro();
+  mpu.setThreshold(3);
+  checkSettings();
 
   // Настройка точки доступа
   WiFi.softAP(ssid, password);
