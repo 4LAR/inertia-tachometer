@@ -1,95 +1,58 @@
 #include <Wire.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
-#include <MPU6050.h>
 
-const char* ssid = "TEST_GYRO";
-const char* password = "40404040";
+// Адрес MPU6050
+#define MPU6050_ADDR 0x68
 
-ESP8266WebServer server(80);
-
-// const int MPU_addr = 0x68;  // I2C адрес модуля MPU-6050
-MPU6050 mpu;
-int SCL_PIN=D1;
-int SDA_PIN=D2;
+// Регистры
+#define PWR_MGMT_1 0x6B
+#define ACCEL_XOUT_H 0x3B
+#define GYRO_XOUT_H 0x43
 
 void setup() {
   Serial.begin(115200);
-  // Wire.begin();
+  Wire.begin(D2, D1);
 
-  // Инициализация MPU-6050
-  // Wire.beginTransmission(MPU_addr);
-  // Wire.write(0x6B);  // PWR_MGMT_1 register
-  // Wire.write(0);     // "пробуждаем" модуль MPU-6050
-  // Wire.endTransmission(true);
-  Serial.println("Initialize MPU6050");
-  while(!mpu.beginSoftwareI2C(SCL_PIN,SDA_PIN,MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G))
-  {
-    Serial.println("Could not find a valid MPU6050 sensor, check wiring!");
-    delay(500);
-  }
-  Serial.println("Wrote to IMU");
-  mpu.calibrateGyro();
-  mpu.setThreshold(3);
-  checkSettings();
-
-  // Настройка точки доступа
-  WiFi.softAP(ssid, password);
-  Serial.println("Точка доступа создана");
-  Serial.print("IP адрес: ");
-  Serial.println(WiFi.softAPIP()); // Вывод IP адреса точки доступа
-
-  server.on("/", indexPage);
-  server.on("/mpu_get", mpu_get);
-
-  server.begin(); // Запуск сервера
-  Serial.println("Сервер запущен");
+  // Инициализация MPU6050
+  Wire.beginTransmission(MPU6050_ADDR);
+  Wire.write(PWR_MGMT_1);
+  Wire.write(0); // Выключаем спящий режим
+  Wire.endTransmission();
 }
 
 void loop() {
-  // mpu_read(); // Чтение данных с MPU-6050
-  server.handleClient();
+  // Считываем данные акселерометра
+  int16_t accelX = readMPU6050(ACCEL_XOUT_H);
+  int16_t accelY = readMPU6050(ACCEL_XOUT_H + 2);
+  int16_t accelZ = readMPU6050(ACCEL_XOUT_H + 4);
 
-  // WiFiClient client = server.available();
-  // if (client) {
-  //   Serial.println("Новый клиент");
-  //   String currentLine = ""; // Сохраняем поступающие данные в строке
-  //   while (client.connected()) {
-  //     if (client.available()) { // Если от клиента поступают данные
-  //       char c = client.read(); // Считываем байт
-  //       if (c == '\n') { // Проверяем на символ перевода строки
-  //         if (currentLine.length() == 0) { // Конец HTTP запроса
-  //           // Отправка HTML-страницы с данными
-  //           client.print("<html><title>ESP32 WebServer</title></html>");
-  //           client.print("<body bgcolor=\"#E6E6FA\"><h1 style=\"text-align: center; color: blue\">ESP32 WebServer</h1>");
-  //           client.print("<p style=\"text-align: left; color: red; font-size:150%\">Accelerometer Values:</p>");
-  //           client.print("<p style=\"text-align: left; font-size:150%\">AcX: ");
-  //            client.print(AcX);
-  //           client.print("<br/>AcY: ");
-  //           client.print(AcY);
-  //           client.print("<br/>AcZ: ");
-  //           client.print(AcZ);
-  //           client.print("</p><p style=\"text-align: left; color: red; font-size:150%\">Gyroscope Values:</p>");
-  //           client.print("<p style=\"text-align: left; font-size:150%\">GyX: ");
-  //           client.print(GyX);
-  //           client.print("<br/>GyY: ");
-  //           client.print(GyY);
-  //           client.print("<br/>GyZ: ");
-  //           client.print(GyZ);
-  //           client.print("</p></body>");
-  //           break; // Выход из цикла
-  //         } else {
-  //           currentLine = ""; // Очистка текущей строки
-  //         }
-  //       } else if (c != '\r') {
-  //         currentLine += c; // Добавляем символ в текущую строку
-  //       }
-  //     }
-  //   }
-  //   client.stop(); // Закрываем соединение с клиентом
-  //   Serial.println("Клиент отключен");
-  // }
+  // Считываем данные гироскопа
+  int16_t gyroX = readMPU6050(GYRO_XOUT_H);
+  int16_t gyroY = readMPU6050(GYRO_XOUT_H + 2);
+  int16_t gyroZ = readMPU6050(GYRO_XOUT_H + 4);
+
+  // Преобразуем данные в физические величины
+  float ax = accelX / 16384.0; // Ускорение в g
+  float ay = accelY / 16384.0;
+  float az = accelZ / 16384.0;
+
+  float gx = gyroX / 131.0; // Угловая скорость в °/с
+  float gy = gyroY / 131.0;
+  float gz = gyroZ / 131.0;
+
+  // Выводим данные
+  // Serial.printf("Accel: %.2f, %.2f, %.2f | Gyro: %.2f, %.2f, %.2f\n", ax, ay, az, gx, gy, gz);
+  Serial.printf("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", ax, ay, az, gx, gy, gz);
+
+  // delay(100);
 }
 
+// Функция для чтения данных с MPU6050
+int16_t readMPU6050(uint8_t reg) {
+  Wire.beginTransmission(MPU6050_ADDR);
+  Wire.write(reg);
+  Wire.endTransmission(false);
 
-
+  Wire.requestFrom(MPU6050_ADDR, 2);
+  int16_t value = Wire.read() << 8 | Wire.read();
+  return value;
+}
