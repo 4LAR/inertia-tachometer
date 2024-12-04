@@ -3,7 +3,6 @@ const path = require("path");
 const SerialPort = require("serialport").SerialPort;
 const ReadlineParser = require("@serialport/parser-readline").ReadlineParser;
 
-
 let mainWindow;
 
 app.on("ready", () => {
@@ -36,7 +35,7 @@ const parser = port.pipe(new ReadlineParser({ delimiter: "\n" }));
 
 // Событие при получении данных
 parser.on("data", (line) => {
-  const [gyroX, gyroY, gyroZ, accelX, accelY, accelZ] = line.trim().split(",");
+  const [accelX, accelY, accelZ, gyroX, gyroY, gyroZ] = line.trim().split(",");
 
   // Проверьте, что mainWindow определено
   if (mainWindow) {

@@ -1,32 +1,45 @@
 const { ipcRenderer } = require("electron");
 const THREE = require("three");
 
+// Параметры фильтра Калмана для pitch и roll
+const pitchFilter = new KalmanFilter(0.1, 1.0, 1.0, 0); // Шум процесса, шум измерений, начальная ошибка
+const rollFilter = new KalmanFilter(0.1, 1.0, 1.0, 0);
+const yawFilter = new KalmanFilter(0.1, 1.0, 1.0, 0); // Для yaw можно использовать также фильтр Калмана
+
 let gpitch = 0, groll = 0, gyaw = 0; // Начальные значения углов
 let apitch = 0, aroll = 0, ayaw = 0; // Начальные значения углов
 let lastTime = performance.now(); // Текущее время для расчета dt
 
+document.getElementById("resetButton").addEventListener("click", () => {
+  apitch = 0;
+  aroll = 0;
+  ayaw = 0;
+  gyaw = 0;
+});
+
 // Создаем сцену
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 800);
 camera.position.z = 5;
 
 const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("3dCanvas") });
 renderer.setSize(window.innerWidth, window.innerHeight);
 
 // Добавляем куб
-const geometry = new THREE.BoxGeometry();
+const geometry = new THREE.BoxGeometry(1, 1, 2);
 const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
 const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
 
+function normalizeAngle(angle) {
+    return ((angle % 360) + 360) % 360; // Приводит к диапазону [0, 360]
+}
+
 // Анимация
 function animate() {
-    cube.rotation.x = parseFloat(gpitch) * (Math.PI / 180);
-    cube.rotation.y = parseFloat(groll) * (Math.PI / 180);
-    cube.rotation.z = parseFloat(gyaw) * (Math.PI / 180);
-  // cube.rotation.x = THREE.MathUtils.degToRad(apitch); // Переводим градусы в радианы
-  // cube.rotation.y = THREE.MathUtils.degToRad(aroll);
-  // cube.rotation.z = THREE.MathUtils.degToRad(ayaw);
+  cube.rotation.x = THREE.MathUtils.degToRad(normalizeAngle(-aroll));
+  cube.rotation.y = THREE.MathUtils.degToRad(normalizeAngle(gyaw));
+  cube.rotation.z = THREE.MathUtils.degToRad(normalizeAngle(-apitch));
   requestAnimationFrame(animate);
   renderer.render(scene, camera);
 }
@@ -56,6 +69,7 @@ var averages = {
   accelY: 0.0,
   accelZ: 0.0,
 };
+
 ipcRenderer.on("mpu-data", (event, data) => {
   for (const key in data) {
     if (dataArrays[key].length < max_length_arr) {
@@ -82,31 +96,23 @@ ipcRenderer.on("mpu-data", (event, data) => {
   `;
 
   const currentTime = performance.now();
-  const dt = (currentTime - lastTime) / 1000.0;
+  const dt = Math.min((currentTime - lastTime) / 1000.0, 0.1);
   lastTime = currentTime;
 
-  apitch += averages.accelX * dt;
-  aroll += averages.accelY * dt;
-  ayaw += averages.accelZ * dt;
+  // Интеграция данных гироскопа
+  apitch += averages.gyroX * dt;
+  aroll += averages.gyroY * dt;
+  gyaw += averages.gyroZ * dt;
 
-  gpitch = Math.atan(data.gyroY / Math.sqrt(data.gyroX ** 2 + data.gyroZ ** 2)) * (180 / Math.PI);
-  groll = Math.atan(-data.gyroX / data.gyroZ) * (180 / Math.PI);
-  gyaw = 0; // Акселерометр не предоставляет данных для Yaw
+  // Рассчитываем углы акселерометра
+  const accelPitch = Math.atan2(averages.accelY, Math.sqrt(averages.accelX ** 2 + averages.accelZ ** 2)) * (180 / Math.PI);
+  const accelRoll = Math.atan2(-averages.accelX, averages.accelZ) * (180 / Math.PI);
+
+  // Комплементарный фильтр для корректировки углов
+  const alpha = 0.98;
+  apitch = alpha * apitch + (1 - alpha) * accelPitch;
+  aroll = alpha * aroll + (1 - alpha) * accelRoll;
+
+  // Проверка и вывод
+  // console.log(`apitch: ${apitch}, aroll: ${aroll}, gyaw: ${gyaw}`);
 });
-
-
-
-// ipcRenderer.on("mpu-data", (event, data) => {
-//   const { gpitch, groll, gyaw, apitch, aroll, ayaw } = data;
-//
-//   // Преобразуем углы (Pitch, Roll, Yaw) в радианы
-//   cube.rotation.x = parseFloat(gpitch) * (Math.PI / 180);
-//   cube.rotation.y = parseFloat(groll) * (Math.PI / 180);
-//   cube.rotation.z = parseFloat(gyaw) * (Math.PI / 180);
-//
-//   // cube.rotation.x = parseFloat(apitch) * (Math.PI / 180);
-//   // cube.rotation.y = parseFloat(aroll) * (Math.PI / 180);
-//   // cube.rotation.z = parseFloat(ayaw) * (Math.PI / 180);
-//
-//   document.getElementById('log').innerHTML = `gyro: ${gpitch} / ${groll} / ${gyaw} | axel: ${apitch} / ${aroll} / ${ayaw}`;
-// });
