@@ -36,12 +36,22 @@ const parser = port.pipe(new ReadlineParser({ delimiter: "\n" }));
 // Событие при получении данных
 parser.on("data", (line) => {
   const [accelX, accelY, accelZ, gyroX, gyroY, gyroZ] = line.trim().split(",");
-
-  // Проверьте, что mainWindow определено
   if (mainWindow) {
     mainWindow.webContents.send("mpu-data", { gyroX, gyroY, gyroZ, accelX, accelY, accelZ });
   } else {
     console.error("Ошибка: mainWindow не определено.");
+  }
+});
+
+ipcMain.on("serial-write", (event, command) => {
+  if (port && port.isOpen) {
+    port.write(command + "\n", (err) => {
+      if (err) {
+        console.error("Ошибка отправки команды: ", err);
+      } else {
+        console.log("Команда отправлена:", command);
+      }
+    });
   }
 });
 

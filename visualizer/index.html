@@ -9,14 +9,19 @@
       display: block;
       margin: auto;
     }
+    body {
+      margin: 0px;
+    }
   </style>
 </head>
 <body>
   <button id="resetButton">Сброс</button>
+  <button id="calibrateButton">Калибровка</button>
+  <button id="hardresetButton">Сброс настроек</button>
   <canvas id="3dCanvas"></canvas>
   <p id="log"></p>
   <p id="log2"></p>
-  
+
   <script src="KalmanFilter.js"></script>
   <script src="renderer.js"></script>
 </body>
