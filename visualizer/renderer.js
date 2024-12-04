@@ -13,6 +13,10 @@ let gpitch = 0, groll = 0, gyaw = 0; // Начальные значения уг
 let apitch = 0, aroll = 0, ayaw = 0; // Начальные значения углов
 let lastTime = performance.now(); // Текущее время для расчета dt
 
+let xPos = 0, yPos = 0, zPos = 0;
+let xVel = 0, yVel = 0, zVel = 0;
+let accX = 0, accY = 0, accZ = 0;
+
 document.getElementById("resetButton").addEventListener("click", () => {
   apitch = 0;
   aroll = 0;
@@ -31,14 +35,18 @@ document.getElementById("hardresetButton").addEventListener("click", () => {
 // Создаем сцену
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 5;
+camera.position.z = 4;
 
 const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("3dCanvas") });
 renderer.setSize(window.innerWidth, window.innerHeight - 150);
 
+const textureLoader = new THREE.TextureLoader();
+const texture = textureLoader.load('./texture.jpg');
+const material = new THREE.MeshBasicMaterial({ map: texture });
+
 // Добавляем куб
 const geometry = new THREE.BoxGeometry(1, 1, 2);
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+// const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
 const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
 
@@ -51,6 +59,9 @@ function animate() {
   cube.rotation.x = THREE.MathUtils.degToRad(normalizeAngle(-aroll));
   cube.rotation.y = THREE.MathUtils.degToRad(normalizeAngle(gyaw));
   cube.rotation.z = THREE.MathUtils.degToRad(normalizeAngle(-apitch));
+  cube.position.x = xPos;
+  cube.position.y = yPos;
+  cube.position.z = zPos;
   requestAnimationFrame(animate);
   renderer.render(scene, camera);
 }
@@ -133,6 +144,26 @@ ipcRenderer.on("mpu-data", (event, data) => {
   const alpha = 0.98;
   apitch = alpha * apitch + (1 - alpha) * accelPitch;
   aroll = alpha * aroll + (1 - alpha) * accelRoll;
+
+  // // Интеграция ускорения для обновления положения
+  // accX = selected_data.accelX;
+  // accY = selected_data.accelY;
+  // accZ = selected_data.accelZ;
+  //
+  // // Update velocity by integrating acceleration
+  // xVel += accX * dt;
+  // yVel += accY * dt;
+  // zVel += accZ * dt;
+  //
+  // xPos += xVel * dt;
+  // yPos += yVel * dt;
+  // zPos += zVel * dt;
+  //
+  // // Limit the position to prevent extreme values
+  // xPos = Math.max(-5, Math.min(5, xPos));
+  // yPos = Math.max(-5, Math.min(5, yPos));
+  // zPos = Math.max(-5, Math.min(5, zPos));
+
 
   // apitch = pitchFilter.update(accelPitch);
   // aroll = rollFilter.update(accelRoll);
