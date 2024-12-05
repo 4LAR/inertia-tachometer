@@ -103,15 +103,16 @@ void loop() {
   if (Serial.available()) {
     String command = Serial.readStringUntil('\n');
     if (command == "CALIBRATE") {
-      calibrateSensors();
+      // calibrateBias();
       // После калибровки сохраняем новые значения в EEPROM
-      EEPROM.write(ACCEL_BIAS_X_ADDR, accelBiasX * 100);
-      EEPROM.write(ACCEL_BIAS_Y_ADDR, accelBiasY * 100);
-      EEPROM.write(ACCEL_BIAS_Z_ADDR, accelBiasZ * 100);
-      EEPROM.write(GYRO_BIAS_X_ADDR, gyroBiasX * 100);
-      EEPROM.write(GYRO_BIAS_Y_ADDR, gyroBiasY * 100);
-      EEPROM.write(GYRO_BIAS_Z_ADDR, gyroBiasZ * 100);
+      // EEPROM.write(ACCEL_BIAS_X_ADDR, accelBiasX * 100);
+      // EEPROM.write(ACCEL_BIAS_Y_ADDR, accelBiasY * 100);
+      // EEPROM.write(ACCEL_BIAS_Z_ADDR, accelBiasZ * 100);
+      // EEPROM.write(GYRO_BIAS_X_ADDR, gyroBiasX * 100);
+      // EEPROM.write(GYRO_BIAS_Y_ADDR, gyroBiasY * 100);
+      // EEPROM.write(GYRO_BIAS_Z_ADDR, gyroBiasZ * 100);
 
+      calibrateDeadzones();
       // Сохраняем мёртвую зону в EEPROM
       EEPROM.write(ACCEL_DEADZONE_X_ADDR, accelDeadzoneX * 100);
       EEPROM.write(ACCEL_DEADZONE_Y_ADDR, accelDeadzoneY * 100);
@@ -145,6 +146,13 @@ void loop() {
       gyroBiasY = 0.0;
       gyroBiasZ = 0.0;
 
+      accelDeadzoneX = 0.0;
+      accelDeadzoneY = 0.0;
+      accelDeadzoneZ = 0.0;
+      gyroDeadzoneX = 0.0;
+      gyroDeadzoneY = 0.0;
+      gyroDeadzoneZ = 0.0;
+
       Serial.println("Calibration reset completed.");
     }
   }
@@ -161,21 +169,14 @@ int16_t readMPU6050(uint8_t reg) {
   return value;
 }
 
-// Функция для калибровки гироскопа и акселерометра
-void calibrateSensors() {
+// Функция для калибровки смещений (bias)
+void calibrateBias() {
   long accelSumX = 0, accelSumY = 0, accelSumZ = 0;
   long gyroSumX = 0, gyroSumY = 0, gyroSumZ = 0;
 
-  float maxAccelX = -1000, minAccelX = 1000;
-  float maxAccelY = -1000, minAccelY = 1000;
-  float maxAccelZ = -1000, minAccelZ = 1000;
-  float maxGyroX = -1000, minGyroX = 1000;
-  float maxGyroY = -1000, minGyroY = 1000;
-  float maxGyroZ = -1000, minGyroZ = 1000;
+  Serial.println("Calibration for Bias started...");
 
-  Serial.println("Calibration started...");
-
-  // Собираем данные для калибровки
+  // Собираем данные для калибровки смещений
   for (int i = 0; i < calibrateCount; i++) {
     int16_t accelX = readMPU6050(ACCEL_XOUT_H);
     int16_t accelY = readMPU6050(ACCEL_XOUT_H + 2);
@@ -193,7 +194,56 @@ void calibrateSensors() {
     gyroSumY += gyroY;
     gyroSumZ += gyroZ;
 
-    // Обновляем минимальные и максимальные значения
+    delay(10); // Небольшая задержка между измерениями
+  }
+
+  // Рассчитываем смещения для гироскопа
+  gyroBiasX = (float)gyroSumX / calibrateCount / 131.0;
+  gyroBiasY = (float)gyroSumY / calibrateCount / 131.0;
+  gyroBiasZ = (float)gyroSumZ / calibrateCount / 131.0;
+
+  // Рассчитываем смещения для акселерометра
+  accelBiasX = (float)accelSumX / calibrateCount / 16384.0; // Преобразуем в "g"
+  accelBiasY = (float)accelSumY / calibrateCount / 16384.0;
+  accelBiasZ = ((float)accelSumZ / calibrateCount / 16384.0) - 1.0; // Учитываем 1g
+
+  // Печатаем результат калибровки смещений
+  Serial.printf("New Accelerometer Bias: %.2f, %.2f, %.2f\n", accelBiasX, accelBiasY, accelBiasZ);
+  Serial.printf("New Gyroscope Bias: %.2f, %.2f, %.2f\n", gyroBiasX, gyroBiasY, gyroBiasZ);
+
+  Serial.println("Bias calibration completed.");
+}
+
+// Функция для вычисления мёртвых зон (deadzones)
+void calibrateDeadzones() {
+  float maxAccelX = -1000, minAccelX = 1000;
+  float maxAccelY = -1000, minAccelY = 1000;
+  float maxAccelZ = -1000, minAccelZ = 1000;
+  float maxGyroX = -1000, minGyroX = 1000;
+  float maxGyroY = -1000, minGyroY = 1000;
+  float maxGyroZ = -1000, minGyroZ = 1000;
+
+  Serial.println("Calibration for Deadzones started...");
+
+  // Собираем данные для калибровки мёртвых зон
+  for (int i = 0; i < calibrateCount; i++) {
+    int16_t accelX = readMPU6050(ACCEL_XOUT_H);
+    int16_t accelY = readMPU6050(ACCEL_XOUT_H + 2);
+    int16_t accelZ = readMPU6050(ACCEL_XOUT_H + 4);
+
+    int16_t gyroX = readMPU6050(GYRO_XOUT_H);
+    int16_t gyroY = readMPU6050(GYRO_XOUT_H + 2);
+    int16_t gyroZ = readMPU6050(GYRO_XOUT_H + 4);
+
+    // Применяем смещения при вычислении мёртвых зон
+    accelX -= accelBiasX * 16384.0;
+    accelY -= accelBiasY * 16384.0;
+    accelZ -= accelBiasZ * 16384.0;
+
+    gyroX -= gyroBiasX * 131.0;
+    gyroY -= gyroBiasY * 131.0;
+    gyroZ -= gyroBiasZ * 131.0;
+
     maxAccelX = max(maxAccelX, accelX / 16384.0f);
     minAccelX = min(minAccelX, accelX / 16384.0f);
     maxAccelY = max(maxAccelY, accelY / 16384.0f);
@@ -211,16 +261,6 @@ void calibrateSensors() {
     delay(10); // Небольшая задержка между измерениями
   }
 
-  // Рассчитываем смещения для гироскопа
-  gyroBiasX = (float)gyroSumX / calibrateCount / 131.0;
-  gyroBiasY = (float)gyroSumY / calibrateCount / 131.0;
-  gyroBiasZ = (float)gyroSumZ / calibrateCount / 131.0;
-
-  // Рассчитываем смещения для акселерометра
-  accelBiasX = (float)accelSumX / calibrateCount / 16384.0; // Преобразуем в "g"
-  accelBiasY = (float)accelSumY / calibrateCount / 16384.0;
-  accelBiasZ = ((float)accelSumZ / calibrateCount / 16384.0) - 1.0; // Учитываем 1g
-
   // Вычисляем мёртвую зону для каждой оси
   accelDeadzoneX = (maxAccelX - minAccelX) / 2.0;
   accelDeadzoneY = (maxAccelY - minAccelY) / 2.0;
@@ -230,11 +270,20 @@ void calibrateSensors() {
   gyroDeadzoneY = (maxGyroY - minGyroY) / 2.0;
   gyroDeadzoneZ = (maxGyroZ - minGyroZ) / 2.0;
 
-  // Печатаем результат калибровки
-  Serial.printf("New Accelerometer Bias: %.2f, %.2f, %.2f\n", accelBiasX, accelBiasY, accelBiasZ);
-  Serial.printf("New Gyroscope Bias: %.2f, %.2f, %.2f\n", gyroBiasX, gyroBiasY, gyroBiasZ);
+  // Печатаем результат калибровки мёртвых зон
   Serial.printf("New Accelerometer Deadzones: X: %.2f, Y: %.2f, Z: %.2f\n", accelDeadzoneX, accelDeadzoneY, accelDeadzoneZ);
   Serial.printf("New Gyroscope Deadzones: X: %.2f, Y: %.2f, Z: %.2f\n", gyroDeadzoneX, gyroDeadzoneY, gyroDeadzoneZ);
 
-  Serial.println("Calibration completed.");
+  Serial.println("Deadzone calibration completed.");
+}
+
+// Функция для применения мёртвой зоны
+void applyDeadzone(float &ax, float &ay, float &az, float &gx, float &gy, float &gz) {
+  if (fabs(ax) < accelDeadzoneX) ax = 0;
+  if (fabs(ay) < accelDeadzoneY) ay = 0;
+  if (fabs(az) < accelDeadzoneZ) az = 0;
+
+  if (fabs(gx) < gyroDeadzoneX) gx = 0;
+  if (fabs(gy) < gyroDeadzoneY) gy = 0;
+  if (fabs(gz) < gyroDeadzoneZ) gz = 0;
 }
