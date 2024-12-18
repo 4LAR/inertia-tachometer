@@ -1,3 +1,8 @@
+const Store = require('electron-store');
+const store = new Store();
+
+/*----------------------------------------------------------------------------*/
+
 const { ipcRenderer } = require("electron");
 const THREE = require("three");
 
@@ -9,7 +14,6 @@ const gyroSensitivity = 1;                 // Масштабный коэффи�
 const accelerationScale = 9.81;
 let lastTimestamp = performance.now();        // Время предыдущего кадра
 let useAccelerometer = false;                  // Флаг: true — использовать акселерометр, false — только гироскоп
-var raw = true;                               //
 
 // Параметры фильтра Калмана для pitch и roll
 const pitchFilter = new KalmanFilter(0.1, 1.0, 1.0, 0); // Шум процесса, шум измерений, начальная ошибка
@@ -18,14 +22,17 @@ const yawFilter = new KalmanFilter(0.1, 1.0, 1.0, 0); // Для yaw можно �
 
 /*----------------------------------------------------------------------------*/
 
-document.getElementById("resetButton").addEventListener("click", () => {
-  rotation = { roll: 0, pitch: 0, yaw: 0 };
-});
+const menu_items = [
+  "scene",
+  "chart"
+];
 
-document.getElementById("calibrateButton").addEventListener("click", () => {
-  ipcRenderer.send("serial-write", "CALIBRATE");
-});
-
-document.getElementById("hardresetButton").addEventListener("click", () => {
-  ipcRenderer.send("serial-write", "RESET"); // Команда для сброса настроек
-});
+function open_menu(item) {
+  for (const el of menu_items) {
+    if (item == el) {
+      document.getElementById(el).style.display = "block";
+    } else {
+      document.getElementById(el).style.display = "none";
+    }
+  }
+}

@@ -1,0 +1,126 @@
+
+body {
+  background-color: var(--bg-color);
+  font-family: -apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif,"Apple Color Emoji";
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+.block_select {
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  user-select: none;
+}
+
+li {
+  list-style-type: none;
+}
+
+ul {
+  margin-left: 0;
+  padding-left: 0;
+}
+
+p {
+  color: var(--font-color);
+}
+
+/* -------------------------------------------------------------------------- */
+
+
+.scroll_style::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+  background-color: #000;
+}
+
+.scroll_style::-webkit-scrollbar-track {
+  background: var(--scroll-track-bg-color);
+}
+
+.scroll_style::-webkit-scrollbar-thumb {
+  background-color: var(--scroll-thumb-bg-color);
+}
+
+/* -------------------------------------------------------------------------- */
+
+.leftMenu {
+  position: fixed;
+  left: 0px;
+  top: 0px;
+  width: 400px;
+  background-color: var(--left-menu-color);
+  height: 100%;
+  overflow-y: scroll;
+  box-sizing: border-box;
+  border-right: 1px solid var(--border-color);
+  direction: rtl;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.leftMenu > * {
+  direction: ltr;
+}
+
+.leftMenu > div {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.leftMenu > div:last-child {
+  border-bottom: none;
+}
+
+.leftMenu > div:last-child {
+  border-bottom: none;
+}
+
+/* -------------------------------------------------------------------------- */
+
+.main-menu {
+  position: fixed;
+  left: 400px;
+  top: 0px;
+  width: calc(100% - 400px);
+  height: 20px;
+}
+
+/* -------------------------------------------------------------------------- */
+
+.main {
+  position: fixed;
+  left: 400px;
+  top: 20px;
+  width: calc(100% - 400px);
+  height: calc(100% - 20px);
+  box-sizing: border-box;
+}
+
+.main > div {
+  width: 100%;
+  height: 100%;
+}
+
+#3dCanvas {
+  width: 100%;
+  height: 100%;
+}
+
+canvas {
+  display: block;
+  margin: auto;
+}
+
+#deadZoneTable > table {
+  width: 100%;
+  color: var(--font-color);
+  border-collapse: collapse;
+  border: 1px solid var(--border-color);
+  /* padding-right: 10px; */
+}
+
+.chart canvas {
+  width: 100% !important;
+  height: auto;
+}

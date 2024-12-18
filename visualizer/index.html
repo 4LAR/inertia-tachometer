@@ -3,28 +3,58 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="static/css/colors.css">
+  <link rel="stylesheet" href="static/css/main.css">
   <title>MPU6050 Visualizer</title>
-  <style>
-    canvas {
-      display: block;
-      margin: auto;
-    }
-    body {
-      margin: 0px;
-    }
-  </style>
 </head>
 <body>
-  <button id="resetButton">Сброс</button>
+  <div class="leftMenu scroll_style">
+    <div class="">
+      <p>Координаты</p>
+      <p id="gyro">Gyro: xx / xx / xx</p>
+      <p id="accel">Accel: xx / xx / xx</p>
+    </div>
+    <div class="">
+      <p>Мёртвая зона</p>
+      <button type="button" name="button" onclick="clear_dead_zone()">Сброс</button>
+      <button type="button" name="button" onclick="start_dead_zone()">Калибровка</button>
+      <div id="deadZoneTable"></div>
+      <br>
+    </div>
+    <div class="">
+      <p>Смещение</p>
+      <button type="button" name="button">Сброс</button>
+      <button type="button" name="button">Калибровка</button>
+    </div>
+  </div>
+  <div class="main-menu">
+    <button type="button" name="button" onclick="open_menu('scene')">Проекция</button>
+    <button type="button" name="button" onclick="open_menu('chart')">Графики</button>
+  </div>
+  <div class="main">
+    <div class="scene" id="scene" style="">
+      <canvas id="3dCanvas"></canvas>
+    </div>
+    <div class="chart" id="chart" style="display: none">
+      <div id="chartsContainer" style="width: 100%">
+        <canvas id="combinedChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <!-- <button id="resetButton">Сброс</button>
   <button id="calibrateButton">Калибровка</button>
   <button id="hardresetButton">Сброс настроек</button>
-  <canvas id="3dCanvas"></canvas>
+
   <p id="log"></p>
-  <p id="log2"></p>
+  <p id="log2"></p> -->
 
   <script src="static/js/KalmanFilter.js"></script>
   <script src="static/js/globals.js"></script>
+  <script src="static/js/serial.js"></script>
+  <script src="static/js/dead_zone.js"></script>
+  <script src="static/js/bias.js"></script>
   <script src="static/js/render.js"></script>
+  <script src="static/js/charts.js"></script>
   <script src="static/js/gyro.js"></script>
 </body>
 </html>

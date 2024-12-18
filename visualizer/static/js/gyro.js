@@ -25,53 +25,68 @@ var averages = {
   accelZ: 0.0,
 };
 
-ipcRenderer.on("mpu-data", (event, data) => {
-  for (const key in data) {
-    if (dataArrays[key].length < max_length_arr) {
-      dataArrays[key].push(data[key]);
+let measurements = [];
+let measurementCount = 0;
+let maxMeasurements = 1000;
+let collecting = false;
+function calculate(data) {
+  if (collecting) {
+    measurements.push(data);
+    measurementCount++;
+
+    if (measurementCount >= maxMeasurements) {
+      collecting = false;
+      if (dead_zone_calibrate_flag) find_dead_zone(measurements);
+      measurementCount = 0; // Сбросить счётчик после калибровки
+      measurements = []; // Очистить массив измерений
     }
+    return; // Прекратить выполнение, если собираем данные
   }
 
-  if (dataArrays.gyroX.length === max_length_arr) {
-    averages = Object.fromEntries(
-      Object.entries(dataArrays).map(([key, arr]) => [key, average(arr)])
-    );
-
-    for (const key in dataArrays) dataArrays[key] = [];
+  // Проверка мёртвой зоны для гироскопа
+  if (data.gyroX > deadZoneGyroX[0] && data.gyroX < deadZoneGyroX[1]) {
+    data.gyroX = 0;
+  }
+  if (data.gyroY > deadZoneGyroY[0] && data.gyroY < deadZoneGyroY[1]) {
+    data.gyroY = 0;
+  }
+  if (data.gyroZ > deadZoneGyroZ[0] && data.gyroZ < deadZoneGyroZ[1]) {
+    data.gyroZ = 0;
   }
 
-  document.getElementById('log2').innerHTML = `
-    FILTERED gyro: ${averages.gyroX} / ${averages.gyroY} / ${averages.gyroZ} |
-    accel: ${averages.accelX} / ${averages.accelY} / ${averages.accelZ}
-  `;
+  // Проверка мёртвой зоны для гироскопа
+  if (data.accelX > deadZoneAccelX[0] && data.accelX < deadZoneAccelX[1]) {
+    data.accelX = 0;
+  }
+  if (data.accelY > deadZoneAccelY[0] && data.accelY < deadZoneAccelY[1]) {
+    data.accelY = 0;
+  }
+  if (data.accelZ > deadZoneAccelZ[0] && data.accelZ < deadZoneAccelZ[1]) {
+    data.accelZ = 0;
+  }
 
-  document.getElementById('log').innerHTML = `
-    RAW DATA gyro: ${data.gyroX} / ${data.gyroY} / ${data.gyroZ} |
-    accel: ${data.accelX} / ${data.accelY} / ${data.accelZ}
-  `;
-
-  const selectedData = raw ? data : averages;
-
-  /*--------------------------------------------------------------------------*/
+  document.getElementById('gyro').innerHTML = `Gyro: ${data.gyroX} / ${data.gyroY} / ${data.gyroZ}`;
+  document.getElementById('accel').innerHTML = `Accel: ${data.accelX} / ${data.accelY} / ${data.accelZ}`;
 
   const currentTimestamp = performance.now();
+  const time = currentTimestamp / 1000;
+  update_chart(data);
+
   const deltaTime = (currentTimestamp - lastTimestamp) / 1000;
   lastTimestamp = currentTimestamp;
 
-  rotation.pitch += selectedData.gyroX * deltaTime * gyroSensitivity;
-  rotation.roll += selectedData.gyroY * deltaTime * gyroSensitivity;
-  rotation.yaw += selectedData.gyroZ * deltaTime * gyroSensitivity;
+  rotation.pitch += data.gyroX * deltaTime * gyroSensitivity;
+  rotation.roll += data.gyroY * deltaTime * gyroSensitivity;
+  rotation.yaw += data.gyroZ * deltaTime * gyroSensitivity;
 
-  velocity.x += selectedData.accelX * accelerationScale * deltaTime;
-  velocity.y += selectedData.accelY * accelerationScale * deltaTime;
-  velocity.z += selectedData.accelZ * accelerationScale * deltaTime;
+  velocity.x += data.accelX * accelerationScale * deltaTime;
+  velocity.y += data.accelY * accelerationScale * deltaTime;
+  velocity.z += data.accelZ * accelerationScale * deltaTime;
 
   position.x += velocity.x * deltaTime;
   position.y += velocity.y * deltaTime;
   position.z += velocity.z * deltaTime;
 
-  console.log("Rotation:", rotation);
-  console.log("Position:", position);
-
-  console.log(rotation);
-});
+  // console.log("Rotation:", rotation);
+  // console.log("Position:", position);
+}

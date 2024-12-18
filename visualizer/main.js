@@ -1,5 +1,8 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
+const Store = require('electron-store');
+Store.initRenderer();
+
 const SerialPort = require("serialport").SerialPort;
 const ReadlineParser = require("@serialport/parser-readline").ReadlineParser;
 
@@ -7,7 +10,7 @@ let mainWindow;
 
 app.on("ready", () => {
   mainWindow = new BrowserWindow({
-    width: 800,
+    width: 1000,
     height: 600,
     webPreferences: {
       contextIsolation: false,
@@ -23,6 +26,20 @@ app.on("window-all-closed", () => {
   }
 });
 
+try {
+  require('electron-reloader')(module, {
+    ignore: [
+      "settings.ini",
+      "connections.json"
+    ]
+  })
+} catch {}
+
+module.exports = {
+  initialize: (window) => {
+    mainWindow = window;
+  },
+};
 
 const port = new SerialPort({
   path: "COM6", // Замените на ваш порт
@@ -59,9 +76,3 @@ ipcMain.on("serial-write", (event, command) => {
 port.on("error", (err) => {
   console.error("Ошибка порта: ", err.message);
 });
-
-module.exports = {
-  initialize: (window) => {
-    mainWindow = window;
-  },
-};
