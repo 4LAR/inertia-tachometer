@@ -11,8 +11,8 @@
   <div class="leftMenu scroll_style">
     <div class="">
       <p>Координаты</p>
-      <p id="gyro">Gyro: xx / xx / xx</p>
-      <p id="accel">Accel: xx / xx / xx</p>
+      <p id="gyro" style="white-space: nowrap">Gyro: xx / xx / xx</p>
+      <p id="accel" style="white-space: nowrap">Accel: xx / xx / xx</p>
     </div>
     <div class="">
       <p>Мёртвая зона</p>
@@ -22,14 +22,55 @@
       <br>
     </div>
     <div class="">
-      <p>Смещение</p>
-      <button type="button" name="button">Сброс</button>
-      <button type="button" name="button">Калибровка</button>
+      <p>Фильтр низких частот</p>
+      <label for="">
+        Использовать
+        <input type="checkbox" id="lowPassFilter">
+      </label><br>
+      <label for="">
+        Alpha
+        <input type="number" id="lowPassFilter_alpha" value="0.1" step="0.01">
+      </label><br><br>
+    </div>
+    <div class="">
+      <p>скользящее окно</p>
+      <label for="">
+        Использовать
+        <input type="checkbox" id="MovingAverageFilter">
+      </label><br>
+      <label for="">
+        Размер окна
+        <input type="number" id="MovingAverageFilter_size" value="5" step="1">
+      </label><br><br>
+    </div>
+    <div class="">
+      <p>Фильтр Калмана</p>
+      <label for="">
+        Использовать
+        <input type="checkbox" id="kalman_filter">
+      </label><br>
+      <label for="">
+        Шум процесса
+        <input type="number" id="process_noise" value="0.1" step="0.01">
+      </label><br>
+      <label for="">
+        Шум измерений
+        <input type="number" id="measurement_noise" value="0.1" step="0.01">
+      </label><br>
+      <label for="">
+        Оценочная ошибка
+        <input type="number" id="estimated_error" value="1" step="0.1">
+      </label><br>
+      <label for="">
+        Начальная оценка
+        <input type="number" id="initial_value" value="0" step="0.1">
+      </label>
     </div>
   </div>
   <div class="main-menu">
     <button type="button" name="button" onclick="open_menu('scene')">Проекция</button>
     <button type="button" name="button" onclick="open_menu('chart')">Графики</button>
+    <button type="button" name="button" onclick="clear_pos()">Сброс проекции</button>
   </div>
   <div class="main">
     <div class="scene" id="scene" style="">
@@ -53,6 +94,8 @@
   <script src="static/js/serial.js"></script>
   <script src="static/js/dead_zone.js"></script>
   <script src="static/js/bias.js"></script>
+  <script src="static/js/lowPassFilter.js"></script>
+  <script src="static/js/MovingAverageFilter.js"></script>
   <script src="static/js/render.js"></script>
   <script src="static/js/charts.js"></script>
   <script src="static/js/gyro.js"></script>

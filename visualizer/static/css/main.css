@@ -22,7 +22,7 @@ ul {
   padding-left: 0;
 }
 
-p {
+p, label {
   color: var(--font-color);
 }
 

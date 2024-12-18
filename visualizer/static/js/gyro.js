@@ -65,6 +65,41 @@ function calculate(data) {
     data.accelZ = 0;
   }
 
+  if (useKalmanFilter) {
+    data.gyroX = kalmanFilterGyroX.update(data.gyroX);
+    data.gyroY = kalmanFilterGyroY.update(data.gyroY);
+    data.gyroZ = kalmanFilterGyroZ.update(data.gyroZ);
+    data.accelX = kalmanFilterAccelX.update(data.accelX);
+    data.accelY = kalmanFilterAccelY.update(data.accelY);
+    data.accelZ = kalmanFilterAccelZ.update(data.accelZ);
+  }
+
+  if (lowPassFilter_flag) {
+    data.gyroX = lowPassFilter(data.gyroX, previousGyroX, 0.1);
+    data.gyroY = lowPassFilter(data.gyroY, previousGyroY, 0.1);
+    data.gyroZ = lowPassFilter(data.gyroZ, previousGyroZ, 0.1);
+    data.accelX = lowPassFilter(data.accelX, previousAccelX, 0.1);
+    data.accelY = lowPassFilter(data.accelY, previousAccelY, 0.1);
+    data.accelZ = lowPassFilter(data.accelZ, previousAccelZ, 0.1);
+
+    previousAccelX = data.accelX;
+    previousAccelY = data.accelY;
+    previousAccelZ = data.accelZ;
+    previousGyroX = data.gyroX;
+    previousGyroY = data.gyroY;
+    previousGyroZ = data.gyroZ;
+  }
+
+  if (useMovingAverageFilter) {
+    data.gyroX = gyroFilterX.update(data.gyroX);
+    console.log(gyroFilterX.update(data.gyroX));
+    data.gyroY = gyroFilterY.update(data.gyroY);
+    data.gyroZ = gyroFilterZ.update(data.gyroZ);
+    data.accelX = accelFilterX.update(data.accelX);
+    data.accelY = accelFilterY.update(data.accelY);
+    data.accelZ = accelFilterZ.update(data.accelZ);
+  }
+
   document.getElementById('gyro').innerHTML = `Gyro: ${data.gyroX} / ${data.gyroY} / ${data.gyroZ}`;
   document.getElementById('accel').innerHTML = `Accel: ${data.accelX} / ${data.accelY} / ${data.accelZ}`;
 

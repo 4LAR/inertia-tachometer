@@ -12,7 +12,7 @@ renderer.setSize(parentDiv.clientWidth, parentDiv.clientHeight);
 // Загружаем текстуру
 const textureLoader = new THREE.TextureLoader();
 const texture = textureLoader.load('./texture.jpg');
-
+// const material = new THREE.MeshBasicMaterial({ map: texture });
 // Добавляем куб
 const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
 const geometry = new THREE.BoxGeometry(1, 2, 1);
@@ -22,7 +22,7 @@ scene.add(cube);
 // Анимация
 function animate() {
   const euler = new THREE.Euler(
-    -rotation.pitch * Math.PI / 180,
+    rotation.pitch * Math.PI / 180,
     rotation.yaw * Math.PI / 180,
     rotation.roll * Math.PI / 180,
     'XYZ'
