@@ -13,6 +13,11 @@
       <p>Координаты</p>
       <p id="gyro" style="white-space: nowrap">Gyro: xx / xx / xx</p>
       <p id="accel" style="white-space: nowrap">Accel: xx / xx / xx</p>
+      <!-- <label for="">
+        Количество замеров
+        <input type="number" id="data_count" value="1000" step="1">
+      </label><br> -->
+      <button type="button" name="button" onclick="start_save_data()">Записать замеры</button><br><br>
     </div>
     <div class="">
       <p>Мёртвая зона</p>
@@ -98,6 +103,7 @@
   <script src="static/js/MovingAverageFilter.js"></script>
   <script src="static/js/render.js"></script>
   <script src="static/js/charts.js"></script>
+  <script src="static/js/save_data.js"></script>
   <script src="static/js/gyro.js"></script>
 </body>
 </html>

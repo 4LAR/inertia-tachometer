@@ -37,6 +37,7 @@ function calculate(data) {
     if (measurementCount >= maxMeasurements) {
       collecting = false;
       if (dead_zone_calibrate_flag) find_dead_zone(measurements);
+      if (save_data_process_flag) save_data_process(measurements);
       measurementCount = 0; // Сбросить счётчик после калибровки
       measurements = []; // Очистить массив измерений
     }
